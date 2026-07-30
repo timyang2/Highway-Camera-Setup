@@ -1,77 +1,26 @@
-import fetch from 'node-fetch';
-import { writeFileSync } from 'fs';
-import path from 'path';
+// scripts/fetch_cameras.js
+// -----------------------------------------------------------------
+// This version never calls the external CKAN API.
+// It simply copies the static fallback file we added earlier
+// (src/data/fallback_cameras.geojson) into the public folder
+// so that the app can load /cameras.geojson at runtime.
+// -----------------------------------------------------------------
 
-// Helper to fetch CKAN resources for a given portal
-async function fetchCkanResources(baseUrl) {
-  const pkgListUrl = `${baseUrl}/action/package_search?rows=1000`;
-  const resp = await fetch(pkgListUrl);
-  const data = await resp.json();
-  if (!data.success) {
-    console.error('CKAN request failed', data);
-    return [];
-  }
-  return data.result.results;
-}
+import { readFileSync, writeFileSync } from "fs";
+import path from "path";
 
-// Extract camera records from a CKAN package list. This is highly generic – you may need to adjust field names.
-function extractCameras(packages) {
-  const cameras = [];
-  for (const pkg of packages) {
-    // Look for resources that look like "camera" and contain lat/lng fields.
-    for (const res of pkg.resources) {
-      if (res.name && /camera/i.test(res.name) && res.format && /json|geojson/i.test(res.format)) {
-        // Assume the resource URL returns a GeoJSON FeatureCollection of cameras.
-        cameras.push(res.url);
-      }
-    }
-  }
-  return cameras;
-}
+// Path of the fallback GeoJSON we committed earlier
+const fallbackPath = path.resolve("src", "data", "fallback_cameras.geojson");
 
-async function downloadGeojson(url) {
-  const resp = await fetch(url);
-  return await resp.json();
-}
+// Destination where the app expects the file
+const outPath = path.resolve("public", "cameras.geojson");
 
-async function main() {
-  // List of CKAN portals (Selangor + other states if available). Add more as needed.
-  const portals = [
-    "https://opendata.selangor.gov.my/api/3",
-    // "https://opendata.johor.gov.my/api/3", // example for other states
-  ];
-
-  const allFeatures = [];
-  for (const portal of portals) {
-    console.log(`Fetching packages from ${portal}`);
-    const packages = await fetchCkanResources(portal);
-    const cameraUrls = extractCameras(packages);
-    for (const camUrl of cameraUrls) {
-      console.log(`Downloading camera GeoJSON from ${camUrl}`);
-      try {
-        const geo = await downloadGeojson(camUrl);
-        if (geo.type === 'FeatureCollection' && Array.isArray(geo.features)) {
-          allFeatures.push(...geo.features);
-        } else if (geo.type === 'Feature') {
-          allFeatures.push(geo);
-        }
-      } catch (e) {
-        console.error('Failed to download', camUrl, e);
-      }
-    }
-  }
-
-  const merged = {
-    type: 'FeatureCollection',
-    features: allFeatures,
-  };
-
-  const outPath = path.resolve('public', 'cameras.geojson');
-  writeFileSync(outPath, JSON.stringify(merged, null, 2));
-  console.log(`✅ Wrote ${merged.features.length} camera features to ${outPath}`);
-}
-
-main().catch((e) => {
-  console.error('Unexpected error', e);
+try {
+  const data = readFileSync(fallbackPath, "utf-8");
+  writeFileSync(outPath, data);
+  console.log(`✅  Copied fallback data → ${outPath}`);
+} catch (err) {
+  console.error("❌  Failed to copy fallback GeoJSON:", err);
+  // Exit with a non‑zero code so Netlify knows the build failed
   process.exit(1);
-});
+}
