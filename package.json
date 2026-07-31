@@ -1,11 +1,5 @@
 {
   "type": "module",
-  "dependencies": {
-    "@googlemaps/js-api-loader": "^1.14.5",
-    // ...keep the other dependencies that are already listed...
-  }
-}
-{
   "name": "highway-camera-app",
   "version": "0.1.0",
   "private": true,
@@ -16,6 +10,7 @@
     "fetch": "node scripts/fetch_cameras.js"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^1.14.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
