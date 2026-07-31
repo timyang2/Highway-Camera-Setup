@@ -1,0 +1,10 @@
+/* src/App.css – basic styling for the Highway Camera Viewer */
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #f0f2f5;
+}
+#map {
+  width: 100vw;
+  height: 100vh;
+}
